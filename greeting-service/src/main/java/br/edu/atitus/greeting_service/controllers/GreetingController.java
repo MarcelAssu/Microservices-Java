@@ -45,11 +45,8 @@ public class GreetingController {
 	
 	@GetMapping("/{name}")
 	public ResponseEntity<String> greetWithPath(@PathVariable("name") String name) {
-		String greetingReturn = config.getGreeting();
-		String nameReturn = name != null ? name : config.getDefaultName();
-		String textReturn = String.format("%s, %s!!!", greetingReturn, nameReturn);
 
-		return ResponseEntity.ok(textReturn);
+		return greet(name);
 	}
 	
 	@PostMapping
