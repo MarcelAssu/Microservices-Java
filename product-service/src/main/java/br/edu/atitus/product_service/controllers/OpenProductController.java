@@ -43,10 +43,15 @@ public class OpenProductController {
 
 		} else {
 			CurrencyResponse currency = currencyClient.getCurrency(product.getPrice(), product.getCurrency(), targetCurrency);
-			product.setConvertedPrice(currency.getConvertedValue());
-			product.setEnviroment(product.getEnviroment() + " - " + currency.getEnviroment());
+			if(currency != null) {
+				product.setConvertedPrice(currency.getConvertedValue());
+				product.setEnviroment(product.getEnviroment() + " - " + currency.getEnviroment());
+			} else {
+				product.setConvertedPrice(-1);
+				product.setEnviroment(product.getEnviroment() + " - Currency Unavailable");
+				
+			}
 		}
-		
 		
 		
 		return ResponseEntity.ok(product);
