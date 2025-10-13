@@ -7,6 +7,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import br.edu.atitus.currency_service.clients.CurrencyBCClient;
+import br.edu.atitus.currency_service.clients.CurrencyBCResponse;
 import br.edu.atitus.currency_service.entities.CurrencyEntity;
 import br.edu.atitus.currency_service.repositories.CurrencyRepository;
 
@@ -15,13 +17,15 @@ import br.edu.atitus.currency_service.repositories.CurrencyRepository;
 public class CurrencyController {
 	
 	private final CurrencyRepository repository;
+	private final CurrencyBCClient currencyBCClient;
 	
 	@Value("${server.port}")
 	private int serverPort;
 
-	public CurrencyController(CurrencyRepository repository) {
+	public CurrencyController(CurrencyRepository repository, CurrencyBCClient currencyBCClient) {
 		super();
 		this.repository = repository;
+		this.currencyBCClient = currencyBCClient;
 	}
 	
 	@GetMapping("/{value}/{source}/{target}")
@@ -30,11 +34,39 @@ public class CurrencyController {
 			@PathVariable String source,
 			@PathVariable String target) throws Exception{
 		
-		CurrencyEntity currency = repository.findBySourceAndTarget(source, target)
-				.orElseThrow(() -> new Exception("Currency not found"));
+	//	CurrencyEntity currency = repository.findBySourceAndTarget(source, target)
+		//		.orElseThrow(() -> new Exception("Currency not found"));
+		
+		source = source.toUpperCase();
+		target = target.toUpperCase();
+		
+		String dataSource = "None";
+		
+		CurrencyEntity currency = new CurrencyEntity();
+		currency.setSource(source);
+		currency.setTarget(target);
+		if(source.equals(target)) {
+			currency.setConversionRate(1);
+		} else{
+			double curSource = 1;
+			double curTarget = 1;
+			if(!source.equals("BRL")) {
+				CurrencyBCResponse resp = currencyBCClient.getCurrency(source);
+				if(resp.getValue().isEmpty()) throw new Exception("Currency not found for " + source);
+				curSource = resp.getValue().get(0).getCotacaoVenda();
+			}
+			if(!target.equals("BRL")) {
+				CurrencyBCResponse resp = currencyBCClient.getCurrency(target);
+				if(resp.getValue().isEmpty()) throw new Exception("Currency not found for " + target);
+				curTarget = resp.getValue().get(0).getCotacaoVenda();
+			}
+			
+			currency.setConversionRate(curSource / curTarget);
+			dataSource = "API BCB";
+		}
 		
 		currency.setConvertedValue(value * currency.getConversionRate());
-		currency.setEnviroment("Currency running in port: " + serverPort);
+		currency.setEnviroment("Currency running in port: " + serverPort + " - DataSource: " + dataSource);
 		
 		return ResponseEntity.ok(currency);
 		
