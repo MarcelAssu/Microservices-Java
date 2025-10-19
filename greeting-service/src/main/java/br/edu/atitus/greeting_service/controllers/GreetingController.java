@@ -14,7 +14,7 @@ import br.edu.atitus.entities.PersonEntity;
 import br.edu.atitus.greeting_service.configs.GreetingConfig;
 
 @RestController
-@RequestMapping("greeting")
+@RequestMapping("greeting-service")
 public class GreetingController {
 
 	
